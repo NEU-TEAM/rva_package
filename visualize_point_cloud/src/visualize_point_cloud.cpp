@@ -58,10 +58,10 @@ boost::shared_ptr<pcl::visualization::PCLVisualizer> cloud_viewer (new pcl::visu
 
 void generateName(int count, std::string pref, std::string surf, std::string &name)
 {
-  std::ostringstream ost;
-  ost << count;
-  std::string temp(ost.str());
-  name = pref + temp + surf;
+    std::ostringstream ost;
+    ost << count;
+    std::string temp(ost.str());
+    name = pref + temp + surf;
 }
 
 void on_object_cb(const PCV::ConstPtr & object_msg)
@@ -83,9 +83,9 @@ void on_object_cb(const PCV::ConstPtr & object_msg)
             generateName(i, "object_cloud", "", pname);
             cloud_viewer->setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, pname);
             if (!cloud_viewer->updatePointCloud (assambleCloud, rgb, pname))
-            {
-                cloud_viewer->addPointCloud(assambleCloud,rgb,pname);
-            }
+                {
+                    cloud_viewer->addPointCloud(assambleCloud,rgb,pname);
+                }
         }
 }
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
 
     ros::NodeHandle nh;
 
-//    ros::Subscriber sub_clouds = nh.subscribe("/point_cloud", 1, on_cloud_cb);
+    //    ros::Subscriber sub_clouds = nh.subscribe("/point_cloud", 1, on_cloud_cb);
     ros::Subscriber sub_clouds = nh.subscribe<PCV>("point_cloud_vector/objects", 1, on_object_cb);
 
     cloud_viewer->setBackgroundColor (0, 0, 0);
@@ -105,11 +105,11 @@ int main(int argc, char **argv)
 
     ros::Rate loop_rate(10);
     while (ros::ok() && !cloud_viewer->wasStopped())
-    {
-        cloud_viewer->spinOnce(1);
-        ros::spinOnce();
-        loop_rate.sleep ();
-    }
+        {
+            cloud_viewer->spinOnce(1);
+            ros::spinOnce();
+            loop_rate.sleep ();
+        }
 
     return 0;
 }
