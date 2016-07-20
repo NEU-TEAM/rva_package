@@ -1,0 +1,6 @@
+Header header
+
+std_msgs/String labels
+cloud_get_object/Object_Image_Pixels objects_pixels
+recognize_with_vgg/Object_Pixels_Boundaries boundaries
+std_msgs/UInt16MultiArray hsv

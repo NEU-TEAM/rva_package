@@ -1,0 +1,11 @@
+<launch>
+  <node name="rva_central_control" pkg="rva_central_control" type="rva_central_control" output="screen">
+  </node>
+
+  <node name="rva_servo_track" pkg="rva_servo_track" type="rva_servo_track" >
+  </node>
+
+  <node name="rva_servo_search" pkg="rva_servo_search" type="rva_servo_search" >
+  </node>
+
+</launch>

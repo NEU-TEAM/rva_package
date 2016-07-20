@@ -1,0 +1,5 @@
+#USER IGNORES
+*.user
+
+#QT BUILD FILES
+apps/

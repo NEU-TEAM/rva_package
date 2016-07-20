@@ -1,0 +1,9 @@
+<launch>
+
+  <node name="recognize_with_vgg" pkg="recognize_with_vgg" type="recognize_with_vgg" >
+  </node>
+
+  <node name="io_confirm_object" pkg="io_confirm_object" type="io_confirm_object" >
+  </node>
+
+</launch>

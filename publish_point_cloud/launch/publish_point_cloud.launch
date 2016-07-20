@@ -1,0 +1,21 @@
+<launch>
+  <!-- params -->
+  <arg name="camera" default="camera"/>
+  <!-- this topic value should be the same with the one defined at publish_point_cloud node -->
+  <arg name="source_cloud_topic" default="point_cloud"/>
+
+  <node name="publish_point_cloud" pkg="publish_point_cloud" type="publish_point_cloud" >
+  </node>
+
+  <node name="broadcast_camera_frame" pkg="broadcast_camera_frame" type="broadcast_camera_frame" >
+    <param name="camera_link_frame_id" value="/$(arg camera)_link_frame"/>
+  	<param name="camera_pitch_frame_id" value="/$(arg camera)_pitch_frame"/>
+  	<param name="camera_yaw_frame_id" value="/$(arg camera)_yaw_frame"/>
+  	<remap from="point_cloud_source" to="/$(arg source_cloud_topic)"/>
+  </node>
+
+  <param name="use_gui" value="true"/> 
+  <node name="rviz" pkg="rviz" type="rviz" >
+  </node>
+
+</launch>

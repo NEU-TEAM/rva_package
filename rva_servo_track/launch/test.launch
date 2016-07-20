@@ -1,0 +1,9 @@
+<launch>
+  <!-- params -->
+  <arg name="mode_track" default="3"/>
+
+  <param name="/status/running_mode" value="$(arg mode_track)"/> 
+  <node name="rva_servo_track" pkg="rva_servo_track" type="rva_servo_track" output="screen">
+  </node>
+
+</launch>

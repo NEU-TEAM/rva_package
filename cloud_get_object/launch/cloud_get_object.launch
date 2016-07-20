@@ -1,0 +1,16 @@
+<launch>
+  <!-- params -->
+  <arg name="max_plane_cloud" default="point_cloud/plane_max"/>
+  <arg name="max_plane_pose" default="pose/plane_max"/>
+
+  <node name="cloud_get_surface" pkg="cloud_get_surface" type="cloud_get_surface" >
+  	<remap from="max_plane_cloud_topic" to="$(arg max_plane_cloud)"/>
+    <remap from="max_plane_pose_topic" to="$(arg max_plane_pose)"/>
+  </node>
+
+  <node name="cloud_get_object" pkg="cloud_get_object" type="cloud_get_object" >
+    <remap from="max_plane_cloud_topic" to="$(arg max_plane_cloud)"/>
+    <remap from="max_plane_pose_topic" to="$(arg max_plane_pose)"/>
+  </node>
+
+</launch>
