@@ -9,12 +9,14 @@
 
 //Custom message
 #include <rva_central_control/target.h>
+#include <recognize_with_vgg/Target_Recognized_Object.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <image_transport/subscriber_filter.h>
 
 #include "colortrack.h"
+#include "camshift.h"
 
 float TOANGLEX = 0.02; // a reasonable speed
 float TOANGLEY = 0.02;
@@ -27,6 +29,8 @@ int yaw_ = 90;
 // wait loop for target lost
 #define WAIT_LOOP 50
 int delay_ = WAIT_LOOP;
+
+typedef recognize_with_vgg::Target_Recognized_Object TRO;
 
 image_transport::Publisher imagePubTrack_ ;
 ros::Publisher servoPubTrack_;
@@ -43,7 +47,10 @@ int modeType_ = m_wander;
 string param_running_mode = "/status/running_mode";
 bool isInTracking_ = true;// cause the first call for tracking means have something to track
 
-ColorTrack CT;
+//ColorTrack CT;
+CamShift CS;
+
+cv::Rect detection_;
 
 void servoCallback(const std_msgs::UInt16MultiArrayConstPtr &msg)
 {
@@ -52,6 +59,15 @@ void servoCallback(const std_msgs::UInt16MultiArrayConstPtr &msg)
     yaw_ = msg->data[1];
 }
 
+void resultCallback(const TRO::ConstPtr & msg)
+{
+    int minh = msg->boundaries.boundaries[0];
+    int maxh = msg->boundaries.boundaries[1];
+    int minw = msg->boundaries.boundaries[2];
+    int maxw = msg->boundaries.boundaries[3];
+    // omit the background
+    detection_ = cv::Rect(minw+10, minh+10, maxw - minw - 20, maxh - minh - 20);
+}
 
 void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
 {
@@ -70,10 +86,22 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
     src_img_ = src_->image;
     src_img_.copyTo(track_image_);
 
+//    cv::rectangle(track_image_, detection_, cv::Scalar(232,228,53),2);
+
     int xpos, ypos;
+    cv::RotatedRect roi;
 
     // check target area
-    if (CT.process(src_img_, track_image_, xpos, ypos))
+    // CT.process(src_img_, track_image_, xpos, ypos)
+    if (detection_.area() < 400)
+        {
+            isInTracking_ = false;
+            ROS_WARN("Target area in image is %d, too small to be tracked.\n", detection_.area());
+
+            CS.tracker_initialized = false;
+        }
+
+    if (CS.process(src_img_,detection_, track_image_, xpos, ypos, roi))
         {
             track_ptr_->header = image_msg->header;
             track_ptr_->image = track_image_;
@@ -117,6 +145,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
                 {
                     isInTracking_ = false;
                     ROS_WARN("Target out of range.\n");
+
+                    CS.tracker_initialized = false;
                 }
         }
     else
@@ -126,6 +156,8 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
                 {
                     isInTracking_ = false;
                     ROS_WARN("Target lost.\n");
+
+                    CS.tracker_initialized = false;
                 }
         }
 }
@@ -142,6 +174,7 @@ int main(int argc, char **argv)
 		servoPubTrack_ = nh.advertise<std_msgs::UInt16MultiArray>("servo", 1);
 		trackPubStatus_ = nh.advertise<std_msgs::Bool>("status/track/feedback", 1);
 
+		ros::Subscriber sub_res = nh.subscribe<TRO>("recognize/confirm/result", 1, resultCallback);
 		image_transport::Subscriber sub_rgb = it.subscribe("/rgb/image", 1, imageCallback);
 		ros::Subscriber sub_s = nh.subscribe<std_msgs::UInt16MultiArray> ("servo", 1, servoCallback);
 

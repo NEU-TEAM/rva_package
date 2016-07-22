@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rva_servo_track)
 
-set(PROJECT_SRCS src/rva_servo_track.cpp src/colortrack.cpp)
+set(PROJECT_SRCS src/rva_servo_track.cpp src/colortrack.cpp src/camshift.cpp src/utilities)
 
 #Comment this if don't want debug
-#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   tf
   rva_central_control
+  recognize_with_vgg
 )
 
 find_package(OpenCV REQUIRED)

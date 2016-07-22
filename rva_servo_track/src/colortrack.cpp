@@ -14,14 +14,12 @@ int S_MIN = 0;
 int S_MAX = 256;
 int V_MIN = 0;
 int V_MAX = 256;
-//default capture width and height
-const int FRAME_WIDTH = 640;
-const int FRAME_HEIGHT = 480;
+
 //max number of objects to be detected in frame
 const int MAX_NUM_OBJECTS = 50;
 //minimum and maximum object area
-const int MIN_OBJECT_AREA = 20*20;
-const int MAX_OBJECT_AREA = FRAME_HEIGHT*FRAME_WIDTH / 1.5;
+const int MIN_OBJECT_AREA = 400;
+const int MAX_OBJECT_AREA =  204800;
 //names that will appear at the top of each window
 const string windowName = "Thresholded Image";
 const string trackbarWindowName = "Trackbars";
@@ -29,13 +27,6 @@ const string trackbarWindowName = "Trackbars";
 void on_trackbar( int, void* )
 {//This function gets called whenever a
 		// trackbar position is changed
-}
-
-string intToString(int number)
-{
-		std::stringstream ss;
-		ss << number;
-		return ss.str();
 }
 
 void createTrackbars(){
@@ -63,32 +54,6 @@ void createTrackbars(){
 		createTrackbar( "V_MAX", trackbarWindowName, &V_MAX, V_MAX, on_trackbar );
 }
 
-void drawObject(int x, int y,Mat &frame){
-
-		//use some of the openCV drawing functions to draw crosshairs
-		//on your tracked image!
-
-		//UPDATE:JUNE 18TH, 2013
-		//added 'if' and 'else' statements to prevent
-		//memory errors from writing off the screen (ie. (-25,-25) is not within the window!)
-
-		circle(frame,Point(x,y),20,Scalar(0,255,0),2);
-		if(y-25>0)
-				line(frame,Point(x,y),Point(x,y-25),Scalar(0,255,0),2);
-		else line(frame,Point(x,y),Point(x,0),Scalar(0,255,0),2);
-		if(y+25<FRAME_HEIGHT)
-				line(frame,Point(x,y),Point(x,y+25),Scalar(0,255,0),2);
-		else line(frame,Point(x,y),Point(x,FRAME_HEIGHT),Scalar(0,255,0),2);
-		if(x-25>0)
-				line(frame,Point(x,y),Point(x-25,y),Scalar(0,255,0),2);
-		else line(frame,Point(x,y),Point(0,y),Scalar(0,255,0),2);
-		if(x+25<FRAME_WIDTH)
-				line(frame,Point(x,y),Point(x+25,y),Scalar(0,255,0),2);
-		else line(frame,Point(x,y),Point(FRAME_WIDTH,y),Scalar(0,255,0),2);
-
-		putText(frame,intToString(x)+","+intToString(y),Point(x,y+30),1,1,Scalar(0,255,0),2);
-
-}
 
 void morphOps(Mat &thresh)
 {
@@ -145,7 +110,7 @@ bool trackFilteredObject(int &x, int &y, Mat threshold, Mat &cameraFeed){
 								{
 										putText(cameraFeed, "Tracking Object", Point(0,50),2,1,Scalar(0,255,0),2);
 										//draw object location on screen
-										drawObject(x, y, cameraFeed);
+										Utilities::drawObject(x, y, cameraFeed);
 								}
 						else putText(cameraFeed,"TOO MUCH NOISE! ADJUST FILTER",Point(0,50),1,2,Scalar(0,0,255),2);
 				}

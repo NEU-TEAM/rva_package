@@ -9,6 +9,8 @@
 #include <opencv/highgui.h>
 #include <opencv/cv.h>
 
+#include "utilities.h"
+
 class ColorTrack
 {
 public:
