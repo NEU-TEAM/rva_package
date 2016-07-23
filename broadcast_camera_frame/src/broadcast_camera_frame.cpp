@@ -25,8 +25,11 @@ float dz_link_to_pitch = 0.027;
 float dx_pitch_to_yaw = 0.019;
 float dz_pitch_to_yaw = 0.0773;
 
+double GH;
+
 float pitchtemp_ = 0.0;
 int tol_ = 2; // the tolerance (degree) about camera shaking
+int OFFSET = 101; // offset for pitch which was got from IMU
 
 // roslaunch param
 std::string cameraLinkFrameID_ = "/camera_link_frame";
@@ -34,8 +37,9 @@ std::string cameraPitchFrameID_ = "/camera_pitch_frame"; // y along the axis of 
 std::string cameraYawFrameID_ = "/camera_yaw_frame"; // y to the right, x to the front, z up, orign at the bottom of support
 std::string pointCloudSourceTopic_ = "/point_cloud";
 
-void pitchCallback(const std_msgs::Float32ConstPtr & msg){
-    pitch_ = msg->data; // notice that pitch_ < 0
+void pitchCallback(const std_msgs::Float32ConstPtr & msg)
+{
+    pitch_ = msg->data - OFFSET; // notice that pitch_ < 0
     if (fabs(pitch_ - pitchtemp_) > tol_ )
         pitchtemp_ = pitch_;
     pitch_ = pitchtemp_  * 0.01745; // / 180.0 * 3.14159
@@ -45,7 +49,6 @@ void tfCallback(const std_msgs::HeaderConstPtr & msg)
 {
     ROS_WARN_THROTTLE(13, "Broadcasting tf...");
 
-#ifdef DEBUG_TRANS
     static tf::TransformBroadcaster br_optic_to_link;
     tf::Transform tf_optic_to_link;
 
@@ -56,7 +59,6 @@ void tfCallback(const std_msgs::HeaderConstPtr & msg)
 
     tf_optic_to_link.setRotation(q);
     br_optic_to_link.sendTransform(tf::StampedTransform(tf_optic_to_link, msg->stamp, cameraLinkFrameID_, "/openni_rgb_optical_frame"));
-#endif
 
     static tf::TransformBroadcaster br_link_to_pitch;
     tf::Transform tf_link_to_pitch;
@@ -80,16 +82,19 @@ void tfCallback(const std_msgs::HeaderConstPtr & msg)
     tf_pitch_to_yaw.setRotation(q_y);
     br_pitch_to_yaw.sendTransform(tf::StampedTransform(tf_pitch_to_yaw, msg->stamp,  cameraYawFrameID_, cameraPitchFrameID_));
 
-#ifdef DEBUG_TRANS
-    static tf::TransformBroadcaster br_yaw_to_map;
-    tf::Transform tf_yaw_to_map;
+    static tf::TransformBroadcaster br_yaw_to_base;
+    tf::Transform tf_yaw_to_base;
 
-    tf_yaw_to_map.setOrigin( tf::Vector3(0, 0, 1.2) );
+    tf_yaw_to_base.setOrigin( tf::Vector3(0, 0, GH) );
     tf::Quaternion q_m;
     q_m.setRPY(0 , 0, 0);  // translate the camera link frame into pitch frame
 
-    tf_yaw_to_map.setRotation(q_m);
-    br_yaw_to_map.sendTransform(tf::StampedTransform(tf_yaw_to_map, msg->stamp, "/map", cameraYawFrameID_));
+    tf_yaw_to_base.setRotation(q_m);
+
+#ifdef DEBUG_TRANS
+    br_yaw_to_base.sendTransform(tf::StampedTransform(tf_yaw_to_base, msg->stamp, "/map", cameraYawFrameID_));
+#else
+    br_yaw_to_base.sendTransform(tf::StampedTransform(tf_yaw_to_base, msg->stamp, "/base_link", cameraYawFrameID_));
 #endif
 }
 
@@ -103,6 +108,8 @@ int main(int argc, char** argv){
 		pnh.param("camera_pitch_frame_id", cameraPitchFrameID_, cameraPitchFrameID_);
 		pnh.param("camera_yaw_frame_id", cameraYawFrameID_, cameraYawFrameID_);
 		pnh.param("point_cloud_source", pointCloudSourceTopic_, pointCloudSourceTopic_);
+		pnh.param("camera_pitch_offset", OFFSET, OFFSET);
+		pnh.param("ground_to_base_height", GH, GH);
 
 		ros::Subscriber sub_acc = nh.subscribe("/camera_pitch", 3, pitchCallback);
 		ros::Subscriber sub = nh.subscribe<std_msgs::Header>("pointcloud/header", 3, tfCallback);
@@ -110,16 +117,13 @@ int main(int argc, char** argv){
 
     while (ros::ok())
         {
+            if (ros::param::has("camera_pitch_offset"))
+                ros::param::get("camera_pitch_offset", OFFSET);
+
+            if (ros::param::has("ground_to_base_height"))
+                ros::param::get("ground_to_base_height", GH);
+
             ros::spinOnce();
-//            if (sub_acc.getNumPublishers() == 0)
-//                {
-//                    ROS_ERROR_THROTTLE(5, "No IMU data publisher!");
-//                    continue;
-//                }
-//            else
-//                {
-//                    ROS_INFO_ONCE("IMU data recieved!");
-//                }
         }
     return 0;
 };

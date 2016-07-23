@@ -23,6 +23,7 @@
 
 #include <tf/transform_broadcaster.h>
 
+// dynamic configure
 #include <dynamic_reconfigure/server.h>
 #include <publish_point_cloud/ppcParametersConfig.h>
 
@@ -69,7 +70,8 @@ void processAndPublish(PointCloud::Ptr & pclCloud, const std_msgs::Header & head
 		cloudPub_.publish(rosCloud);
 }
 
-void dyCallback(publish_point_cloud::ppcParametersConfig &config, uint32_t level) {
+void dyCallback(publish_point_cloud::ppcParametersConfig &config, uint32_t level)
+{
     ROS_INFO("Reconfigure Request: max depth: %f, min depth: %f.\n", config.max_depth, config.min_depth);
     maxDepth_ = config.max_depth;
     minDepth_ = config.min_depth;

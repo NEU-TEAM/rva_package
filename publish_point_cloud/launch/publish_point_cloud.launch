@@ -11,6 +11,9 @@
     <param name="camera_link_frame_id" value="/$(arg camera)_link_frame"/>
   	<param name="camera_pitch_frame_id" value="/$(arg camera)_pitch_frame"/>
   	<param name="camera_yaw_frame_id" value="/$(arg camera)_yaw_frame"/>
+
+  	<param name="camera_pitch_offset" value="101"/>
+
   	<remap from="point_cloud_source" to="/$(arg source_cloud_topic)"/>
   </node>
 

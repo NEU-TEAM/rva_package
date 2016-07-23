@@ -28,10 +28,11 @@
 // notice that these angles are in camera optical frame
 float roll_ = 1.92; // rotation x, default 20 degree dep.
 float pitch_ = 0.0; // rotation y
-float gh_ = 1.2; // ground height
+double GH = 1.2; // ground height
 
 float rolltemp_ = 0.0;
 int tol_ = 2; // the tolerance (degree) about camera shaking
+int OFFSET = 101; // offset for pitch which was got from IMU
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloudMono;
@@ -107,7 +108,7 @@ void cloudCallback(const PointCloud::ConstPtr& source_msg)
     // std::cout << "trans_inv: "<< transform_inv_ << std::endl;
 
     FindPlane FP;
-    FP.getParameters(gh_);
+    FP.getParameters(GH);
     FP.findPlaneInCloud(cloud_t);
 
     PointCloudMono::Ptr plane_max (new PointCloudMono());
@@ -178,7 +179,7 @@ void rollCallback(const std_msgs::Float32ConstPtr & msg)
     /* here, roll is in camera optical frame, the angle obtained by acc is in degree,
     depression angle is smaller than 0, here we need to let depression angle be positive and plus 90
     */
-    roll_ = - msg->data + 90;
+    roll_ = - msg->data + OFFSET + 90;
     if (fabs(roll_ - rolltemp_) > tol_ )
         rolltemp_ = roll_;
     roll_ = rolltemp_  * 0.01745; // / 180.0 * 3.14159
@@ -196,6 +197,8 @@ int main(int argc, char **argv)
 		pnh.param("max_plane_pose_topic", poseMaxPlaneTopic_, poseMaxPlaneTopic_);
 		pnh.param("ground_cloud_topic", pointCloudGroundTopic_, pointCloudGroundTopic_);
 		pnh.param("ground_pose_topic", poseGroundTopic_, poseGroundTopic_);
+		pnh.param("camera_pitch_offset", OFFSET, OFFSET);
+		pnh.param("ground_to_base_height", GH, GH);
 
 		posePubPlaneMax_ = nh.advertise<geometry_msgs::PoseStamped>(poseMaxPlaneTopic_, 1);
 		cloudPubPlaneMax_ = nh.advertise<sensor_msgs::PointCloud2>(pointCloudMaxPlaneTopic_, 1);
@@ -209,6 +212,12 @@ int main(int argc, char **argv)
 
     while (ros::ok())
         {
+            if (ros::param::has("camera_pitch_offset"))
+                ros::param::get("camera_pitch_offset", OFFSET);
+
+            if (ros::param::has("ground_to_base_height"))
+                ros::param::get("ground_to_base_height", GH);
+
             if (ros::param::has(param_running_mode))
                 ros::param::get(param_running_mode, modeType_);
 

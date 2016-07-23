@@ -11,8 +11,11 @@
 
 //Custom message
 #include <recognize_with_vgg/Target_Recognized_Object.h>
-
 #include <rva_central_control/target.h>
+
+// dynamic configure
+#include <dynamic_reconfigure/server.h>
+#include <rva_central_control/globalParamConfig.h>
 
 #include <stdio.h>
 
@@ -22,6 +25,10 @@
 using namespace std;
 
 typedef recognize_with_vgg::Target_Recognized_Object TRO;
+
+// global value
+int OFFSET = 101; // camera pitch offset
+double GH = 1.2; // camera base to robot base
 
 bool centralSwitch_ = true; // main switch
 
@@ -83,7 +90,7 @@ void targetCallback(const rva_central_control::targetConstPtr &msg)
             targetLabel_ = msg->label.data;
 
             isTargetSet_ = true;
-
+ros::NodeHandle pnh("~");
             ros::param::set(param_target_type, tgtType_);
             ros::param::set("/target/label", targetLabel_);
         }
@@ -204,6 +211,16 @@ void trackCallback(const std_msgs::BoolConstPtr &msg)
         }
 }
 
+void dyCallback(rva_central_control::globalParamConfig &config, uint32_t level)
+{
+    ROS_INFO("Reconfigure Request: offset: %d, height: %f.\n", config.camera_pitch_offset_cfg, config.ground_to_base_height_cfg);
+    OFFSET = config.camera_pitch_offset_cfg;
+    GH = config.ground_to_base_height_cfg;
+    // set global params
+    ros::param::set("camera_pitch_offset", OFFSET);
+    ros::param::set("ground_to_base_height", GH);
+}
+
 void resetStatus()
 {
 		tgtType_ = t_null;
@@ -220,6 +237,17 @@ int main(int argc, char **argv)
 		ros::init(argc, argv, "rva_central_control");
 
 		ros::NodeHandle nh;
+		ros::NodeHandle pnh("~");
+
+		pnh.param("camera_pitch_offset", OFFSET, OFFSET);
+		pnh.param("ground_to_base_height", GH, GH);
+
+		// set up dynamic reconfigure callback
+		dynamic_reconfigure::Server<rva_central_control::globalParamConfig> server;
+		dynamic_reconfigure::Server<rva_central_control::globalParamConfig>::CallbackType f;
+
+		f = boost::bind(&dyCallback, _1, _2);
+		server.setCallback(f);
 
 		// don't change the order without reason
 		ros::Subscriber sub_tgt = nh.subscribe<rva_central_control::target>("recognize/target", 1, targetCallback);

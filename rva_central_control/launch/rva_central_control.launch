@@ -1,5 +1,7 @@
 <launch>
   <node name="rva_central_control" pkg="rva_central_control" type="rva_central_control" output="screen">
+  	<param name="camera_pitch_offset" value="101"/>
+  	<param name="ground_to_base_height" value="1.2"/>
   </node>
 
   <node name="rva_servo_track" pkg="rva_servo_track" type="rva_servo_track" >

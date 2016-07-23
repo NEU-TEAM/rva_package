@@ -6,6 +6,8 @@
   <node name="cloud_get_surface" pkg="cloud_get_surface" type="cloud_get_surface" >
   	<remap from="max_plane_cloud_topic" to="$(arg max_plane_cloud)"/>
     <remap from="max_plane_pose_topic" to="$(arg max_plane_pose)"/>
+
+    <param name="camera_pitch_offset" value="101"/>
   </node>
 
   <node name="cloud_get_object" pkg="cloud_get_object" type="cloud_get_object" >
