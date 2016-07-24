@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 
 		Search sh;
 
-		ros::Rate loop_rate(0.5); //0.2hz
+		ros::Rate loop_rate(0.2); //0.2hz
 		while (ros::ok())
 				{
 						if (ros::param::has(param_running_mode))

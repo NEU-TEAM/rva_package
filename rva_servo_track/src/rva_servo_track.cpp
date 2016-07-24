@@ -44,6 +44,8 @@ cv::Mat track_image_;
 
 enum ModeType{m_wander, m_recognize, m_search, m_track};
 int modeType_ = m_wander;
+int modeTypeTemp_ = m_wander;
+
 string param_running_mode = "/status/running_mode";
 bool isInTracking_ = true;// cause the first call for tracking means have something to track
 
@@ -183,7 +185,14 @@ int main(int argc, char **argv)
 		while (ros::ok())
 				{
 						if (ros::param::has(param_running_mode))
-								ros::param::get(param_running_mode, modeType_);
+								{
+										ros::param::get(param_running_mode, modeTypeTemp_);
+										if (modeTypeTemp_ != m_track && modeType_ == m_track)
+												{
+														CS.tracker_initialized = false;
+												}
+										modeType_ = modeTypeTemp_;
+								}
 
 						std_msgs::Bool flag;
 						flag.data = true;

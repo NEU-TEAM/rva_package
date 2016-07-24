@@ -90,7 +90,7 @@ void targetCallback(const rva_central_control::targetConstPtr &msg)
             targetLabel_ = msg->label.data;
 
             isTargetSet_ = true;
-ros::NodeHandle pnh("~");
+
             ros::param::set(param_target_type, tgtType_);
             ros::param::set("/target/label", targetLabel_);
         }
@@ -226,6 +226,7 @@ void resetStatus()
 		tgtType_ = t_null;
 		targetLabel_ = "";
 		isTargetSet_ = false;
+		foundTarget_ = false;
 
 		needSearch_ = false;
 
