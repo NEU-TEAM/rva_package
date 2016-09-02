@@ -1,0 +1,6 @@
+<launch>
+
+  <node name="rva_grasp_plan" pkg="rva_grasp_plan" type="rva_grasp_plan" >
+  </node>
+
+</launch>

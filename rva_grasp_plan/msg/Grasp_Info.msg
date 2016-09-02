@@ -1,0 +1,4 @@
+Header header
+
+std_msgs/String target_name
+geometry_msgs/PoseWithCovarianceStamped grasp_position
