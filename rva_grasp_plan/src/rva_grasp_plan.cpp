@@ -1,4 +1,6 @@
 #include <ros/ros.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
 
 #include <math.h>
 #include <sensor_msgs/Image.h>
@@ -89,7 +91,7 @@ void normalize(float &pa, float &pb, float &pc, float scale)
 
 void resultCallback(const TRO::ConstPtr & msg)
 {
-		if (modeType_ != m_recognize)
+		if (modeType_ != m_recognize && modeType_ != m_track)
 				{
 						return;
 				}
@@ -106,9 +108,10 @@ void resultCallback(const TRO::ConstPtr & msg)
     pd_ = msg->support_plane.w;
 }
 
-void cloudCallback(const PointCloud::ConstPtr& source_msg)
+//void imuCallback(const tf::TransformListener& listener, const sensor_msgs::Imu::ConstPtr& msg)
+void cloudCallback(const tf::TransformListener& listener, const PointCloud::ConstPtr& source_msg)
 {
-		if (modeType_ != m_recognize)
+		if (modeType_ != m_recognize && modeType_ != m_track)
 				{
 						return;
 				}
@@ -137,7 +140,7 @@ void cloudCallback(const PointCloud::ConstPtr& source_msg)
 
     visualization_msgs::Marker marker;
     // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-    marker.header.frame_id = source_msg->header.frame_id;
+    marker.header.frame_id = "/camera_yaw_frame";
     marker.header.stamp = pcl_conversions::fromPCL(source_msg->header.stamp);
 
     // Set the namespace and id for this marker.  This serves to create a unique ID
@@ -148,17 +151,49 @@ void cloudCallback(const PointCloud::ConstPtr& source_msg)
     marker.type = shape;
     marker.action = visualization_msgs::Marker::ADD;
 
-    // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
-    marker.points.resize(2);
-    marker.points[0].x = avrPt.x;
-    marker.points[0].y = avrPt.y;
-    marker.points[0].z = avrPt.z;
+    // transform the vector
+    listener.waitForTransform("/camera_yaw_frame", source_msg->header.frame_id, ros::Time::now(), ros::Duration(1.0));
+
+    tf::Stamped<tf::Point> p_in_a;
+    tf::Stamped<tf::Point> p_out_a;
+    p_in_a.setX(avrPt.x);
+    p_in_a.setY(avrPt.y);
+    p_in_a.setZ(avrPt.z);
+    p_in_a.frame_id_ = source_msg->header.frame_id;
+
+    listener.transformPoint("/camera_yaw_frame", p_in_a, p_out_a);
+
+    tf::Stamped<tf::Point> p_in_b;
+    tf::Stamped<tf::Point> p_out_b;
 
     float la, lb, lc;
     normalize(la, lb, lc, 0.15);
-    marker.points[1].x = avrPt.x + la;
-    marker.points[1].y = avrPt.y + lb;
-    marker.points[1].z = avrPt.z + lc;
+
+    p_in_b.setX(avrPt.x + la);
+    p_in_b.setY(avrPt.y + lb);
+    p_in_b.setZ(avrPt.z + lc);
+    p_in_b.frame_id_ = source_msg->header.frame_id;
+
+    listener.transformPoint("/camera_yaw_frame", p_in_b, p_out_b);
+
+    // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
+    marker.points.resize(2);
+
+//    marker.points[0].x = avrPt.x;
+//    marker.points[0].y = avrPt.y;
+//    marker.points[0].z = avrPt.z;
+
+//    marker.points[1].x = avrPt.x + la;
+//    marker.points[1].y = avrPt.y + lb;
+//    marker.points[1].z = avrPt.z + lc;
+
+    marker.points[0].x = p_out_a.x();
+    marker.points[0].y = p_out_a.y();
+    marker.points[0].z = p_out_a.z();
+
+    marker.points[1].x = p_out_b.x();
+    marker.points[1].y = p_out_b.y();
+    marker.points[1].z = p_out_b.z();
 
     // The point at index 0 is assumed to be the start point, and the point at index 1 is assumed to be the end.
 
@@ -185,11 +220,13 @@ int main(int argc, char **argv)
 
 //		graspPubInfo_ = nh.advertise<std_msgs::UInt16MultiArray>("servo", 1);
 		markerPub_ = nh.advertise<visualization_msgs::Marker>("grasp/marker", 1);
-
 		graspPubStatus_ = nh.advertise<std_msgs::Bool>("status/grasp/feedback", 1);
 
+		tf::TransformListener listener(ros::Duration(10));
+
 		ros::Subscriber sub_res = nh.subscribe<TRO>("recognize/confirm/result", 1, resultCallback);
-		ros::Subscriber sub_clouds = nh.subscribe("/point_cloud", 1, cloudCallback);
+//		ros::Subscriber imu_sub = n.subscribe<sensor_msgs::Imu>("imu", 100, boost::bind(&imuCallback,boost::ref(listener),_1));
+		ros::Subscriber sub_clouds = nh.subscribe<PointCloud>("/point_cloud", 1, boost::bind(&cloudCallback, boost::ref(listener), _1));
 
 		ROS_WARN("Grasping plan function initialized!\n");
 

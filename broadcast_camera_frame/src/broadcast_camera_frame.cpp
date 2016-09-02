@@ -8,6 +8,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Header.h>
 #include <std_msgs/Empty.h>
+#include <std_msgs/UInt16MultiArray.h>
 
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/subscriber.h>
@@ -43,6 +44,12 @@ void pitchCallback(const std_msgs::Float32ConstPtr & msg)
     if (fabs(pitch_ - pitchtemp_) > tol_ )
         pitchtemp_ = pitch_;
     pitch_ = pitchtemp_  * 0.01745; // / 180.0 * 3.14159
+}
+
+void yawCallback(const std_msgs::UInt16MultiArrayConstPtr &msg)
+{
+    // this callback should always active
+    yaw_ = (msg->data[1] - 90) * 0.01745;
 }
 
 void tfCallback(const std_msgs::HeaderConstPtr & msg)
@@ -112,6 +119,7 @@ int main(int argc, char** argv){
 		pnh.param("ground_to_base_height", GH, GH);
 
 		ros::Subscriber sub_acc = nh.subscribe("/camera_pitch", 3, pitchCallback);
+		ros::Subscriber sub_yaw = nh.subscribe<std_msgs::UInt16MultiArray> ("servo", 1, yawCallback);
 		ros::Subscriber sub = nh.subscribe<std_msgs::Header>("pointcloud/header", 3, tfCallback);
 //		ros::Subscriber sub = nh.subscribe<std_msgs::Empty>("test", 3, tfCallback);
 
