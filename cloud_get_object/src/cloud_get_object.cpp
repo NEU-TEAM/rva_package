@@ -173,6 +173,11 @@ void generalProcessing(const PointCloudMono::ConstPtr& msg, bool istabletop)
 
             obj_pixel_vec.header.frame_id = msg->header.frame_id;
             obj_pixel_vec.header.stamp = pcl_conversions::fromPCL(msg->header.stamp);
+            obj_pixel_vec.support_plane.x = a_;
+            obj_pixel_vec.support_plane.y = b_;
+            obj_pixel_vec.support_plane.z = c_;
+            obj_pixel_vec.support_plane.w = d_;
+
             obj_ros_cloud_vec.header = obj_pixel_vec.header;
 
             idPubObjects_.publish(obj_pixel_vec);

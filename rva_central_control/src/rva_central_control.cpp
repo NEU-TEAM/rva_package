@@ -298,7 +298,7 @@ int main(int argc, char **argv)
 								{
 										if (foundTarget_)
 												{
-														modeType_ = m_track;
+//														modeType_ = m_track;
 												}
 										else
 												{

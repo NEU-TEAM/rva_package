@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
   sensor_msgs
+  geometry_msgs
   tf
   message_generation
 )
@@ -36,6 +37,7 @@ add_message_files(
    DEPENDENCIES
    cloud_get_object
    sensor_msgs
+   geometry_msgs
    std_msgs
 )
 

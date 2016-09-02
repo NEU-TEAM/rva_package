@@ -56,6 +56,7 @@ void resultCallback(const VRO::ConstPtr& result_msg)
                     result.labels = str;
                     result.boundaries = result_msg->boundaries[i];
                     result.objects_pixels = result_msg->objects_vector.vector_objects[i];
+                    result.support_plane = result_msg->support_plane;
                     result.hsv = result_msg->hsv_vector[i];
 
                     isConfirmed_ = true;

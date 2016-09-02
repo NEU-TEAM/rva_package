@@ -178,7 +178,7 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
 {
     if (pixel_msg->vector_objects.empty())
         {
-            ROS_ERROR_THROTTLE(5,"Can't get object in pixel message.\n");
+            ROS_ERROR_THROTTLE(5,"Can't get object pixel message.\n");
             recognizedThings_ = false;
             return;
         }
@@ -188,14 +188,14 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
 
     bool detected = false;
 
-    string label_temp;
+    string label_temp = "";
     int minh_temp = 0;
     int maxh_temp = 0;
     int minw_temp = 0;
     int maxw_temp = 0;
     for (size_t i = 0; i < pixel_msg->vector_objects.size(); i++)
         {
-            std::vector<int> obj_pos;
+            std::vector<int> obj_pos; // object pixels' id in image
             for (size_t j = 0; j < pixel_msg->vector_objects[i].vector_pixels.size(); j++)
                 {
                     int idx = pixel_msg->vector_objects[i].vector_pixels[j];
@@ -222,8 +222,11 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
             label.erase(label.end() - 1, label.end()); // remove the last 1 characters, which is '\n'
             if (detected)
                 {
-                    OPB boundaries;
+                    OPB boundaries; // object pixel boundaries (in image)
+                    OIP obj_pixel_id;
                     int min_w, min_h, max_w, max_h;
+
+                    // judge if two objects are overlaied with each other in image
                     bool isOverLay = Utilities::overlay(minh, maxh, minw, maxw,
                                                                                            minh_temp, maxh_temp, minw_temp, maxw_temp,
                                                                                            min_h, max_h, min_w, max_w);
@@ -241,6 +244,11 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
                             imagePubLabel_.publish(labeled_ptr_->toImageMsg());
 
                             // merge the result
+                            std_msgs::String str;
+                            str.data = label;
+                            result.labels.pop_back();
+                            result.labels.push_back(str);
+
                             boundaries.boundaries.push_back(min_h);
                             boundaries.boundaries.push_back(max_h);
                             boundaries.boundaries.push_back(min_w);
@@ -248,10 +256,13 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
                             result.boundaries.pop_back();
                             result.boundaries.push_back(boundaries);
 
-                            std_msgs::String str;
-                            str.data = label;
-                            result.labels.pop_back();
-                            result.labels.push_back(str);
+                            //  todo:   mergeObjPixels(result.objects_vector)
+                            result.objects_vector.vector_objects.pop_back();
+                            for (size_t k = 0; k < obj_pos.size(); k++)
+                                {
+                                    obj_pixel_id.vector_pixels.push_back(obj_pos[k]);
+                                }
+                            result.objects_vector.vector_objects.push_back(obj_pixel_id);
 
                             int h,s,v;
                             resolveColor(src_img_, obj_pos, h, s, v);
@@ -281,6 +292,10 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
                             labeled_ptr_->encoding = sensor_msgs::image_encodings::BGR8;
                             imagePubLabel_.publish(labeled_ptr_->toImageMsg());
 
+                            std_msgs::String str;
+                            str.data = label;
+                            result.labels.push_back(str);
+
                             // get together the result
                             boundaries.boundaries.push_back(minh);
                             boundaries.boundaries.push_back(maxh);
@@ -288,9 +303,11 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
                             boundaries.boundaries.push_back(maxw);
                             result.boundaries.push_back(boundaries);
 
-                            std_msgs::String str;
-                            str.data = label;
-                            result.labels.push_back(str);
+                            for (size_t k = 0; k < obj_pos.size(); k++)
+                                {
+                                    obj_pixel_id.vector_pixels.push_back(obj_pos[k]);
+                                }
+                            result.objects_vector.vector_objects.push_back(obj_pixel_id);
 
                             int h,s,v;
                             resolveColor(src_img_, obj_pos, h, s, v);
@@ -317,7 +334,8 @@ void labelCallback(const OPV::ConstPtr& pixel_msg)
         }
 
     result.header = pixel_msg->header;
-    result.objects_vector = *pixel_msg;
+    result.support_plane = pixel_msg->support_plane;
+
     recognizePubInfo_.publish(result);
 }
 
