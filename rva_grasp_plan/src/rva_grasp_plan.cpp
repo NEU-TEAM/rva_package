@@ -89,9 +89,9 @@ void normalize(float &pa, float &pb, float &pc, float scale)
 		pc = pc_ / avr * scale;
 }
 
-void resultCallback(const TRO::ConstPtr & msg)
+void recResultCallback(const TRO::ConstPtr & msg)
 {
-		if (modeType_ != m_recognize && modeType_ != m_track)
+		if (modeType_ != m_recognize)
 				{
 						return;
 				}
@@ -108,7 +108,25 @@ void resultCallback(const TRO::ConstPtr & msg)
     pd_ = msg->support_plane.w;
 }
 
-//void imuCallback(const tf::TransformListener& listener, const sensor_msgs::Imu::ConstPtr& msg)
+void trkResultCallback(const TRO::ConstPtr & msg)
+{
+		if (modeType_ != m_track)
+				{
+						return;
+				}
+
+    inliers->indices.clear();
+    for (size_t i = 0; i < msg->objects_pixels.vector_pixels.size(); i++)
+        {
+            inliers->indices.push_back(msg->objects_pixels.vector_pixels[i]);
+        }
+
+//    pa_ = msg->support_plane.x;
+//    pb_ = msg->support_plane.y;
+//    pc_ = msg->support_plane.z;
+//    pd_ = msg->support_plane.w;
+}
+
 void cloudCallback(const tf::TransformListener& listener, const PointCloud::ConstPtr& source_msg)
 {
 		if (modeType_ != m_recognize && modeType_ != m_track)
@@ -129,6 +147,7 @@ void cloudCallback(const tf::TransformListener& listener, const PointCloud::Cons
         }
 
     PointCloud::Ptr cloud_in (new PointCloud());
+
     msgToCloud(source_msg, cloud_in);
 
     PointCloud::Ptr cloud_out (new PointCloud ());
@@ -179,14 +198,6 @@ void cloudCallback(const tf::TransformListener& listener, const PointCloud::Cons
     // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
     marker.points.resize(2);
 
-//    marker.points[0].x = avrPt.x;
-//    marker.points[0].y = avrPt.y;
-//    marker.points[0].z = avrPt.z;
-
-//    marker.points[1].x = avrPt.x + la;
-//    marker.points[1].y = avrPt.y + lb;
-//    marker.points[1].z = avrPt.z + lc;
-
     marker.points[0].x = p_out_a.x();
     marker.points[0].y = p_out_a.y();
     marker.points[0].z = p_out_a.z();
@@ -224,8 +235,8 @@ int main(int argc, char **argv)
 
 		tf::TransformListener listener(ros::Duration(10));
 
-		ros::Subscriber sub_res = nh.subscribe<TRO>("recognize/confirm/result", 1, resultCallback);
-//		ros::Subscriber imu_sub = n.subscribe<sensor_msgs::Imu>("imu", 100, boost::bind(&imuCallback,boost::ref(listener),_1));
+		ros::Subscriber sub_recog = nh.subscribe<TRO>("recognize/confirm/result", 1, recResultCallback);
+		ros::Subscriber sub_track = nh.subscribe<TRO>("track/confirm/result", 1, trkResultCallback);
 		ros::Subscriber sub_clouds = nh.subscribe<PointCloud>("/point_cloud", 1, boost::bind(&cloudCallback, boost::ref(listener), _1));
 
 		ROS_WARN("Grasping plan function initialized!\n");

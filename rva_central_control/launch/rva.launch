@@ -25,4 +25,8 @@
   <include file="$(find io_confirm_object)/launch/io_confirm_object.launch">
   </include>
 
+  <!-- initialize grasp plan -->
+  <include file="$(find rva_grasp_plan)/launch/rva_grasp_plan.launch">
+  </include>
+
 </launch>

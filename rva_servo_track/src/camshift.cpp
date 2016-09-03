@@ -80,7 +80,7 @@ bool CamShift::initialized ()
 		return tracker_initialized;
 }
 
-bool CamShift::process(Mat img_in, Rect detection, Mat &img_out, int &center_x, int &center_y, RotatedRect &roi)
+bool CamShift::process(Mat img_in, Rect detection, Mat &img_out, RotatedRect &roi, std::vector<int> &mask_id)
 {
 		if (tracker_initialized)
 				{
@@ -91,24 +91,14 @@ bool CamShift::process(Mat img_in, Rect detection, Mat &img_out, int &center_x, 
 						roi = camshift_init(img_in, detection);
 				}
 
-		// draw rotate rect on image
-		Point2f vertices[4];
-		roi.points(vertices);
-
-		center_x = roi.center.x;
-		center_y = roi.center.y;
-
 		if (roi.boundingRect().area() < MIN_OBJECT_AREA || roi.boundingRect().area() > MAX_OBJECT_AREA)
 				{
 						return false;
 				}
 
-		Utilities::drawObject(center_x, center_y, img_out);
+		// draw marks on image
 
-		for (int i = 0; i < 4; i++)
-				{
-						line(img_out, vertices[i], vertices[(i+1)%4], Scalar(232,228,53), 2);
-				}
+		Utilities::markImage(img_in, roi, img_out, mask_id);
 
 		waitKey(20);
 		return true;

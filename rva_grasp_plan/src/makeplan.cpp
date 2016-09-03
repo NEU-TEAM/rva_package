@@ -31,6 +31,7 @@ void MakePlan::getAveragePoint(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, 
     avrPt.x = (maxPt.x + minPt.x) / 2;
     avrPt.y = (maxPt.y + minPt.y) / 2;
     avrPt.z = (maxPt.z + minPt.z) / 2;
+    std::cerr << minPt.z << std::endl;
 }
 
 void MakePlan::smartOffset(pcl::PointXYZRGB &avrPt)
@@ -38,12 +39,22 @@ void MakePlan::smartOffset(pcl::PointXYZRGB &avrPt)
 
 }
 
+void MakePlan::removeNans(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, pcl::PointCloud<pcl::PointXYZRGB>::Ptr &cloud_out)
+{
+    pcl::PassThrough<pcl::PointXYZRGB> pass;
+    pass.setInputCloud(cloud_in);
+    pass.setFilterFieldName("z");
+    pass.setFilterLimits(0.5, 1.0);
+    pass.filter(*cloud_out);
+}
+
 bool MakePlan::process(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_in, float a, float b, float c, float d, pcl::PointXYZRGB &avrPt)
 {
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZRGB>);
-    removeOutliers(cloud_in, cloud_filtered);
-
-    getAveragePoint(cloud_filtered, avrPt);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_ro (new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered_pt (new pcl::PointCloud<pcl::PointXYZRGB>);
+    removeOutliers(cloud_in, cloud_filtered_ro);
+    removeNans(cloud_filtered_ro, cloud_filtered_pt);
+    getAveragePoint(cloud_filtered_pt, avrPt);
 
     return true;
 }

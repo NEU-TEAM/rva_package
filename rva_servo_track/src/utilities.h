@@ -9,6 +9,7 @@ public:
     Utilities();
 
     static void drawObject(int x, int y, cv::Mat &frame);
+    static void markImage(cv::Mat img_in, cv::RotatedRect roi, cv::Mat &img_out, std::vector<int> &mask_id);
     static std::string intToString(int number);
 
 };

@@ -35,6 +35,7 @@ typedef recognize_with_vgg::Target_Recognized_Object TRO;
 image_transport::Publisher imagePubTrack_ ;
 ros::Publisher servoPubTrack_;
 ros::Publisher trackPubStatus_;
+ros::Publisher trackPubTRO_; // notice the topic is different from the subscribed one
 
 cv_bridge::CvImageConstPtr src_;
 cv::Mat src_img_;
@@ -52,7 +53,9 @@ bool isInTracking_ = true;// cause the first call for tracking means have someth
 //ColorTrack CT;
 CamShift CS;
 
+std_msgs::String tgt_label_;
 cv::Rect detection_;
+geometry_msgs::Quaternion support_plane_;
 
 void servoCallback(const std_msgs::UInt16MultiArrayConstPtr &msg)
 {
@@ -63,12 +66,16 @@ void servoCallback(const std_msgs::UInt16MultiArrayConstPtr &msg)
 
 void resultCallback(const TRO::ConstPtr & msg)
 {
+    tgt_label_ = msg->labels;
     int minh = msg->boundaries.boundaries[0];
     int maxh = msg->boundaries.boundaries[1];
     int minw = msg->boundaries.boundaries[2];
     int maxw = msg->boundaries.boundaries[3];
+
     // omit the background
     detection_ = cv::Rect(minw+10, minh+10, maxw - minw - 20, maxh - minh - 20);
+
+    support_plane_ = msg->support_plane;
 }
 
 void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
@@ -90,7 +97,6 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
 
 //    cv::rectangle(track_image_, detection_, cv::Scalar(232,228,53),2);
 
-    int xpos, ypos;
     cv::RotatedRect roi;
 
     // check target area
@@ -103,16 +109,18 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
             CS.tracker_initialized = false;
         }
 
-    if (CS.process(src_img_,detection_, track_image_, xpos, ypos, roi))
+    std::vector<int> mask_id; // store object pixels id in image
+    if (CS.process(src_img_,detection_, track_image_, roi, mask_id))
         {
+            // publish exact location and boundaries of tracked object
             track_ptr_->header = image_msg->header;
             track_ptr_->image = track_image_;
             track_ptr_->encoding = sensor_msgs::image_encodings::BGR8;
             imagePubTrack_.publish(track_ptr_->toImageMsg());
 
             //servo make camera central on object
-            int d_x = xpos - 320;
-            int d_y = ypos - 240;
+            int d_x = roi.center.x - 320;
+            int d_y = roi.center.y - 240;
             int deg_x = int(d_x * TOANGLEX); // offset the robot head need to turn
             int deg_y = int(d_y * TOANGLEY);
 
@@ -120,6 +128,16 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
                 {
                     isInTracking_ = true;
                     delay_ = WAIT_LOOP;
+
+                    // publish new TRO info
+                    TRO result;
+                    result.header = image_msg->header;
+                    result.labels = tgt_label_;
+                    result.objects_pixels.vector_pixels = mask_id;
+                    result.support_plane = support_plane_;
+
+                    trackPubTRO_.publish(result);
+
                     return;
                 }
 
@@ -142,6 +160,15 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
                     pitch_ = y_ang;
                     yaw_ = x_ang;
                     servoPubTrack_.publish(array);
+
+//                    // publish new TRO info
+//                    TRO result;
+//                    result.header = image_msg->header;
+//                    result.labels = tgt_label_;
+//                    result.objects_pixels.vector_pixels = mask_id;
+//                    result.support_plane = support_plane_;
+
+//                    trackPubTRO_.publish(result);
                 }
             else
                 {
@@ -175,6 +202,7 @@ int main(int argc, char **argv)
 		imagePubTrack_ = it.advertise("track/image", 1);
 		servoPubTrack_ = nh.advertise<std_msgs::UInt16MultiArray>("servo", 1);
 		trackPubStatus_ = nh.advertise<std_msgs::Bool>("status/track/feedback", 1);
+		trackPubTRO_ = nh.advertise<TRO>("track/confirm/result" , 1);
 
 		ros::Subscriber sub_res = nh.subscribe<TRO>("recognize/confirm/result", 1, resultCallback);
 		image_transport::Subscriber sub_rgb = it.subscribe("/rgb/image", 1, imageCallback);

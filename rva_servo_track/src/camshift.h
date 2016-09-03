@@ -14,7 +14,7 @@ public:
     // This version uses the last detection as initializing rectangle.
     cv::RotatedRect camshift_track (cv::Mat img);
 
-    bool process(cv::Mat img_in, cv::Rect detection, cv::Mat &img_out, int &center_x, int &center_y, cv::RotatedRect &roi);
+    bool process(cv::Mat img_in, cv::Rect detection, cv::Mat &img_out, cv::RotatedRect &roi, std::vector<int> &mask_id);
 
     bool initialized();
 
