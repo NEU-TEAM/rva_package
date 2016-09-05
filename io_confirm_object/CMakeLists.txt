@@ -25,12 +25,7 @@ find_package(OpenCV REQUIRED)
 
 find_package(PCL 1.7 REQUIRED)
 
-catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES io_confirm_object
-#  CATKIN_DEPENDS cv_bridge geometry_msgs image_transport message_generation pcl_ros roscpp sensor_msgs std_msgs tf
-#  DEPENDS system_lib
-)
+catkin_package()
 
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
