@@ -142,7 +142,7 @@ void cloudCallback(const tf::TransformListener& listener, const PointCloud::Cons
 
     if (inliers->indices.empty())
         {
-            ROS_ERROR_THROTTLE(5, "Object to grasp has not been found.\n");
+            ROS_WARN_THROTTLE(5, "Object to grasp has not been found.\n");
             return;
         }
 
@@ -157,70 +157,77 @@ void cloudCallback(const tf::TransformListener& listener, const PointCloud::Cons
     pcl::PointXYZRGB avrPt;
     hasGraspPlan_ = MP.process(cloud_out, pa_, pb_, pc_, pd_, avrPt);
 
-    visualization_msgs::Marker marker;
-    // Set the frame ID and timestamp.  See the TF tutorials for information on these.
-    marker.header.frame_id = "/camera_yaw_frame";
-    marker.header.stamp = pcl_conversions::fromPCL(source_msg->header.stamp);
+    if (hasGraspPlan_)
+        {
+            visualization_msgs::Marker marker;
+            // Set the frame ID and timestamp.  See the TF tutorials for information on these.
+            marker.header.frame_id = "/camera_yaw_frame";
+            marker.header.stamp = pcl_conversions::fromPCL(source_msg->header.stamp);
 
-    // Set the namespace and id for this marker.  This serves to create a unique ID
-    // Any marker sent with the same namespace and id will overwrite the old one
-    marker.ns = "grasp";
-    marker.id = 0;
+            // Set the namespace and id for this marker.  This serves to create a unique ID
+            // Any marker sent with the same namespace and id will overwrite the old one
+            marker.ns = "grasp";
+            marker.id = 0;
 
-    marker.type = shape;
-    marker.action = visualization_msgs::Marker::ADD;
+            marker.type = shape;
+            marker.action = visualization_msgs::Marker::ADD;
 
-    // transform the vector
-    listener.waitForTransform("/camera_yaw_frame", source_msg->header.frame_id, ros::Time::now(), ros::Duration(1.0));
+            // transform the vector
+            listener.waitForTransform("/camera_yaw_frame", source_msg->header.frame_id, ros::Time::now(), ros::Duration(1.0));
 
-    tf::Stamped<tf::Point> p_in_a;
-    tf::Stamped<tf::Point> p_out_a;
-    p_in_a.setX(avrPt.x);
-    p_in_a.setY(avrPt.y);
-    p_in_a.setZ(avrPt.z);
-    p_in_a.frame_id_ = source_msg->header.frame_id;
+            tf::Stamped<tf::Point> p_in_a;
+            tf::Stamped<tf::Point> p_out_a;
+            p_in_a.setX(avrPt.x);
+            p_in_a.setY(avrPt.y);
+            p_in_a.setZ(avrPt.z);
+            p_in_a.frame_id_ = source_msg->header.frame_id;
 
-    listener.transformPoint("/camera_yaw_frame", p_in_a, p_out_a);
+            listener.transformPoint("/camera_yaw_frame", p_in_a, p_out_a);
 
-    tf::Stamped<tf::Point> p_in_b;
-    tf::Stamped<tf::Point> p_out_b;
+            tf::Stamped<tf::Point> p_in_b;
+            tf::Stamped<tf::Point> p_out_b;
 
-    float la, lb, lc;
-    normalize(la, lb, lc, 0.15);
+            float la, lb, lc;
+            normalize(la, lb, lc, 0.15);
 
-    p_in_b.setX(avrPt.x + la);
-    p_in_b.setY(avrPt.y + lb);
-    p_in_b.setZ(avrPt.z + lc);
-    p_in_b.frame_id_ = source_msg->header.frame_id;
+            p_in_b.setX(avrPt.x + la);
+            p_in_b.setY(avrPt.y + lb);
+            p_in_b.setZ(avrPt.z + lc);
+            p_in_b.frame_id_ = source_msg->header.frame_id;
 
-    listener.transformPoint("/camera_yaw_frame", p_in_b, p_out_b);
+            listener.transformPoint("/camera_yaw_frame", p_in_b, p_out_b);
 
-    // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
-    marker.points.resize(2);
+            // Set the pose of the marker.  This is a full 6DOF pose relative to the frame/time specified in the header
+            marker.points.resize(2);
 
-    marker.points[0].x = p_out_a.x();
-    marker.points[0].y = p_out_a.y();
-    marker.points[0].z = p_out_a.z();
+            marker.points[0].x = p_out_a.x() + 0.03;
+            marker.points[0].y = p_out_a.y();
+            marker.points[0].z = p_out_a.z();
 
-    marker.points[1].x = p_out_b.x();
-    marker.points[1].y = p_out_b.y();
-    marker.points[1].z = p_out_b.z();
+            marker.points[1].x = p_out_b.x() + 0.03;
+            marker.points[1].y = p_out_b.y();
+            marker.points[1].z = p_out_b.z();
 
-    // The point at index 0 is assumed to be the start point, and the point at index 1 is assumed to be the end.
+            // The point at index 0 is assumed to be the start point, and the point at index 1 is assumed to be the end.
 
-    // scale.x is the shaft diameter, and scale.y is the head diameter. If scale.z is not zero, it specifies the head length.
-    // Set the scale of the marker -- 1x1x1 here means 1m on a side
-    marker.scale.x = 0.01;
-    marker.scale.y = 0.015;
-    marker.scale.z = 0.04;
+            // scale.x is the shaft diameter, and scale.y is the head diameter. If scale.z is not zero, it specifies the head length.
+            // Set the scale of the marker -- 1x1x1 here means 1m on a side
+            marker.scale.x = 0.01;
+            marker.scale.y = 0.015;
+            marker.scale.z = 0.04;
 
-    // Set the color -- be sure to set alpha to something non-zero!
-    marker.color.r = 0.0f;
-    marker.color.g = 1.0f;
-    marker.color.b = 0.0f;
-    marker.color.a = 1.0;
+            // Set the color -- be sure to set alpha to something non-zero!
+            marker.color.r = 0.0f;
+            marker.color.g = 1.0f;
+            marker.color.b = 0.0f;
+            marker.color.a = 1.0;
 
-    markerPub_.publish(marker);
+            markerPub_.publish(marker);
+        }
+    else
+        {
+            ROS_WARN_THROTTLE(5, "Failed to generate grasp plan.\n");
+        }
 }
 
 int main(int argc, char **argv)

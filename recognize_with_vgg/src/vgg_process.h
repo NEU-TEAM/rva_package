@@ -1,7 +1,11 @@
 #ifndef VGG_PROCESS_H
 #define VGG_PROCESS_H
 
+//#define USE_CUDA
+
+#ifdef USE_CUDA
 #include <cuda_runtime.h>
+#endif
 
 #include <iostream>
 #include <cstring>

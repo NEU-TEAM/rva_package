@@ -47,6 +47,8 @@ enum ModeType{m_wander, m_recognize, m_search, m_track};
 int modeType_ = m_wander;
 int modeTypeTemp_ = m_wander;
 
+bool servo_initialized_ = false;
+
 string param_running_mode = "/status/running_mode";
 bool isInTracking_ = true;// cause the first call for tracking means have something to track
 
@@ -76,6 +78,16 @@ void resultCallback(const TRO::ConstPtr & msg)
     detection_ = cv::Rect(minw+10, minh+10, maxw - minw - 20, maxh - minh - 20);
 
     support_plane_ = msg->support_plane;
+}
+
+void publishServo(int pitch_angle, int yaw_angle)
+{
+    std_msgs::UInt16MultiArray array;
+    array.data.push_back(pitch_angle);
+    array.data.push_back(yaw_angle);
+    pitch_ = pitch_angle;
+    yaw_ = yaw_angle;
+    servoPubTrack_.publish(array);
 }
 
 void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
@@ -154,21 +166,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& image_msg)
                     isInTracking_ = true;
                     delay_ = WAIT_LOOP;
 
-                    std_msgs::UInt16MultiArray array;
-                    array.data.push_back(y_ang);
-                    array.data.push_back(x_ang);
-                    pitch_ = y_ang;
-                    yaw_ = x_ang;
-                    servoPubTrack_.publish(array);
-
-//                    // publish new TRO info
-//                    TRO result;
-//                    result.header = image_msg->header;
-//                    result.labels = tgt_label_;
-//                    result.objects_pixels.vector_pixels = mask_id;
-//                    result.support_plane = support_plane_;
-
-//                    trackPubTRO_.publish(result);
+                    publishServo(y_ang, x_ang);
                 }
             else
                 {
@@ -200,7 +198,7 @@ int main(int argc, char **argv)
 		image_transport::ImageTransport it(nh);
 
 		imagePubTrack_ = it.advertise("track/image", 1);
-		servoPubTrack_ = nh.advertise<std_msgs::UInt16MultiArray>("servo", 1);
+		servoPubTrack_ = nh.advertise<std_msgs::UInt16MultiArray>("servo", 1, true);
 		trackPubStatus_ = nh.advertise<std_msgs::Bool>("status/track/feedback", 1);
 		trackPubTRO_ = nh.advertise<TRO>("track/confirm/result" , 1);
 
@@ -215,6 +213,7 @@ int main(int argc, char **argv)
 						if (ros::param::has(param_running_mode))
 								{
 										ros::param::get(param_running_mode, modeTypeTemp_);
+
 										if (modeTypeTemp_ != m_track && modeType_ == m_track)
 												{
 														CS.tracker_initialized = false;
@@ -224,6 +223,12 @@ int main(int argc, char **argv)
 
 						std_msgs::Bool flag;
 						flag.data = true;
+
+						if (!servo_initialized_)
+								{
+										publishServo(70, 90);
+										servo_initialized_ = true;
+								}
 
 						ros::spinOnce();
 

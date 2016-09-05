@@ -39,6 +39,9 @@ add_message_files(
 catkin_package(
    CATKIN_DEPENDS
    message_runtime
+   recognize_with_vgg
+   geometry_msgs
+   std_msgs
 )
 
 link_directories(${PCL_LIBRARY_DIRS})
@@ -51,6 +54,6 @@ include_directories(
 add_executable(rva_grasp_plan ${PROJECT_SRCS})
 
 #Very important for generate message
-add_dependencies(rva_grasp_plan rva_grasp_plan_generate_message_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(rva_grasp_plan ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(rva_grasp_plan ${catkin_LIBRARIES} ${OpenCV_LIBS} ${PCL_LIBRARIES})

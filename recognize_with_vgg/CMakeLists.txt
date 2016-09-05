@@ -44,6 +44,10 @@ add_message_files(
 catkin_package(
    CATKIN_DEPENDS 
    message_runtime
+   cloud_get_object
+   sensor_msgs
+   geometry_msgs
+   std_msgs
 )
 
 link_directories(${PCL_LIBRARY_DIRS})
@@ -56,7 +60,7 @@ include_directories(
 add_executable(recognize_with_vgg ${PROJECT_SRCS})
 
 #Very important for generate message
-add_dependencies(recognize_with_vgg recognize_with_vgg_generate_message_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(recognize_with_vgg ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(recognize_with_vgg ${catkin_LIBRARIES} ${OpenCV_LIBS} ${Caffe_LIBRARIES} ${PCL_LIBRARIES})
 

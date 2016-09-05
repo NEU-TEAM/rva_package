@@ -31,20 +31,6 @@ find_package(PCL 1.7 REQUIRED)
    target.msg
  )
 
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
 # Generate added messages and services with any dependencies listed here
  generate_messages(
    DEPENDENCIES
@@ -54,7 +40,14 @@ find_package(PCL 1.7 REQUIRED)
 #add dynamic reconfigure api
 generate_dynamic_reconfigure_options(cfg/globalParam.cfg)
 
-catkin_package(CATKIN_DEPENDS message_runtime recognize_with_vgg)
+catkin_package(
+  CATKIN_DEPENDS
+  message_runtime
+  geometry_msgs
+  sensor_msgs
+  std_msgs
+  recognize_with_vgg
+)
 
 include_directories(${catkin_INCLUDE_DIRS})
 
@@ -66,7 +59,7 @@ include_directories(${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OpenCV_INCLUDE_
 add_executable(rva_central_control ${PROJECT_SRCS})
 
 #Very important for generate message
-add_dependencies(rva_central_control rva_central_control_generate_message_cpp ${catkin_EXPORTED_TARGETS})
+add_dependencies(rva_central_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_dependencies(rva_central_control ${PROJECT_NAME}_gencfg)
 

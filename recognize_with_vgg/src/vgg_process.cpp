@@ -69,8 +69,12 @@ vgg_process::vgg_process()
 {
 		get_label("/home/aicrobo/deeplearning/data/synset_words.txt", label);
 
+#ifdef USE_CUDA
 		// mode setting - CPU/GPU
 		Caffe::set_mode(Caffe::GPU);
+#else
+		Caffe::set_mode(Caffe::CPU);
+#endif
 
 		// gpu device number
 		int device_id = 0;

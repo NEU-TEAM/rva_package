@@ -31,7 +31,11 @@ generate_messages(
 find_package(PCL 1.7 REQUIRED)
 
 catkin_package(
-  CATKIN_DEPENDS message_runtime
+  CATKIN_DEPENDS
+  message_runtime
+  std_msgs
+  sensor_msgs
+  geometry_msgs
 )
 
 link_directories(${PCL_LIBRARY_DIRS})
@@ -42,7 +46,7 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
 add_executable(cloud_get_surface ${PROJECT_SRCS})
 
 #Very important for generate message
-add_dependencies(cloud_get_surface cloud_get_surface_generate_message_cpp)
+add_dependencies(cloud_get_surface ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
  target_link_libraries(cloud_get_surface
    ${catkin_LIBRARIES} ${PCL_LIBRARIES}

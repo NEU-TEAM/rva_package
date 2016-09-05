@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 								}
 
 						int yawAngle = 90;
-						int pitchAngle = 100;
+						int pitchAngle = 70;
 						noResult_ = sh.getNextPosition(yawAngle, pitchAngle);
 						ROS_WARN("Searching with yaw %d, pitch %d.\n", yawAngle, pitchAngle);
 						if (noResult_)
